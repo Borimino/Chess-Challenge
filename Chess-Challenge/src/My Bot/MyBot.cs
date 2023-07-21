@@ -1,6 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -20,7 +21,19 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        ScoredMove scoredMove = PickBestMove(board, startDepth);
+        int numberOfPieces = board.GetAllPieceLists().Aggregate(0, (acc, piece) => acc + piece.Count);
+        //int depth = startDepth;
+        int depth = startDepth;
+        if (numberOfPieces < 16)
+        {
+            depth += 1;
+        }
+        if (numberOfPieces < 8)
+        {
+            depth += 1;
+        }
+        System.Console.WriteLine("Starting depth: " + depth);
+        ScoredMove scoredMove = PickBestMove(board, depth);
         //System.Console.WriteLine("Score for this move was " +  scoredMove.score);
         return scoredMove.move;
     }
