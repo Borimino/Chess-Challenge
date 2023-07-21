@@ -1,4 +1,6 @@
 ﻿using ChessChallenge.API;
+using System;
+using System.Collections.Generic;
 
 public class MyBot : IChessBot
 {
@@ -6,13 +8,20 @@ public class MyBot : IChessBot
 
     // Piece values: null, pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
+    // Bonus for a Check
+    int checkBonus = 20000;
+    // Bonus for a CheckMate
+    int checkMateBonus = 100000;
     // Start depth
     int startDepth = 3;
+
+    // Randomness
+    Random rng = new Random();
 
     public Move Think(Board board, Timer timer)
     {
         ScoredMove scoredMove = PickBestMove(board, startDepth);
-        System.Console.WriteLine("Score for this move was " +  scoredMove.score);
+        //System.Console.WriteLine("Score for this move was " +  scoredMove.score);
         return scoredMove.move;
     }
 
@@ -22,11 +31,12 @@ public class MyBot : IChessBot
 
         if (moves.Length == 0)
         {
-            System.Console.WriteLine("No more moves to make");
+            //System.Console.WriteLine("No more moves to make");
             return new ScoredMove(new Move(), int.MinValue);
         }
 
         ScoredMove bestMove = new ScoredMove(moves[0], goodMoves ? int.MinValue : int.MaxValue);
+        List<ScoredMove> bestMoves = new List<ScoredMove> { bestMove };
         foreach (Move move in moves)
         {
             int score;
@@ -44,19 +54,32 @@ public class MyBot : IChessBot
             {
                 score = -1 * PickBestMove(board, depth - 1).score;
             }
+            if (board.IsInCheck())
+            {
+                score += goodMoves ? checkBonus : -1 * checkBonus;
+            }
+            if (board.IsInCheckmate())
+            {
+                score += goodMoves ? checkMateBonus : -1 * checkMateBonus;
+            }
             board.UndoMove(move);
+            if (score == bestMove.score)
+            {
+                bestMoves.Add(new ScoredMove(move, score));
+            }
             if (goodMoves ? score > bestMove.score : score < bestMove.score)
             {
                 bestMove = new ScoredMove(move, score);
+                bestMoves = new List<ScoredMove> { bestMove };
             }
         }
 
-        if (bestMove.score != 0 && depth != 0)
+        /*if (bestMove.score != 0 && depth != 0)
         {
             System.Console.WriteLine("Score at depth " + depth + ": " + bestMove.score);
-        }
+        }*/
 
-        return bestMove;
+        return bestMoves[rng.Next(bestMoves.Count)];
     }
 
     private int Score(Board board)
